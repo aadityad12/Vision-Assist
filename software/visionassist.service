@@ -1,0 +1,29 @@
+[Unit]
+Description=VisionAssist wearable obstacle detection
+After=network.target bluetooth.target sound.target
+
+[Service]
+Type=simple
+User=assistant
+WorkingDirectory=/home/assistant/visionassist
+ExecStartPre=/bin/sleep 10
+ExecStart=/home/assistant/visionassist/venv/bin/python3 /home/assistant/visionassist/vision_assist.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+# --- Install ---
+# sudo cp visionassist.service /etc/systemd/system/visionassist.service
+# sudo systemctl daemon-reload
+# sudo systemctl enable visionassist.service
+# sudo systemctl start visionassist.service
+#
+# --- Useful commands ---
+# sudo systemctl stop visionassist.service      # stop without disabling autostart
+# sudo systemctl restart visionassist.service   # restart after editing files
+# sudo systemctl status visionassist.service    # confirm running
+# journalctl -u visionassist.service -f         # tail logs

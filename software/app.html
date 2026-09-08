@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>VisionAssist</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid #1c1c1c;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+    .logo .accent { color: #4ade80; }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: #666;
+      background: #111;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid #1c1c1c;
+      transition: all 0.3s;
+    }
+    .status-badge.connected {
+      color: #4ade80;
+      border-color: #14532d;
+      background: #052e16;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #444;
+      transition: all 0.3s;
+    }
+    .status-badge.connected .dot {
+      background: #4ade80;
+      box-shadow: 0 0 6px #4ade80;
+    }
+
+    .content {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 18px;
+      border-radius: 14px;
+      border: none;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.3px;
+    }
+    .btn-connect    { background: #4ade80; color: #052e16; }
+    .btn-disconnect { background: #1c1c1c; color: #ef4444; border: 1px solid #2a1010; }
+    .btn:active { transform: scale(0.98); opacity: 0.9; }
+
+    .video-wrap {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #111;
+      border: 1px solid #1c1c1c;
+      display: none;
+    }
+    .video-wrap.show { display: block; }
+    .video-wrap img { width: 100%; display: block; }
+
+    .detection-card {
+      background: #111;
+      border: 1px solid #1c1c1c;
+      border-radius: 14px;
+      padding: 22px 20px;
+      text-align: center;
+      display: none;
+      transition: border-color 0.3s;
+    }
+    .detection-card.show { display: block; }
+    .detection-card.active { border-color: #14532d; }
+
+    .det-label {
+      font-size: 26px;
+      font-weight: 700;
+      color: #4ade80;
+      min-height: 36px;
+      letter-spacing: 0.3px;
+      line-height: 1.3;
+    }
+    .det-label.empty { color: #333; font-size: 16px; font-weight: 400; }
+    /* Zone-colour tint on the label */
+    .det-label.zone-warning { color: #ef4444; }
+    .det-label.zone-caution { color: #f59e0b; }
+
+    .det-sub { margin-top: 7px; font-size: 12px; color: #444; }
+
+    .voice-info {
+      font-size: 11px;
+      color: #2a2a2a;
+      text-align: center;
+      margin-top: -8px;
+    }
+    .voice-info.loaded { color: #1a3a1a; }
+
+    .log-card {
+      background: #0d0d0d;
+      border: 1px solid #1c1c1c;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: none;
+    }
+    .log-card.show { display: block; }
+    .log-title {
+      font-size: 10px;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 10px;
+    }
+    .log-item {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-size: 13px;
+      padding: 5px 0;
+      border-bottom: 1px solid #141414;
+    }
+    .log-item:last-child { border-bottom: none; }
+    .log-item .ts  { font-size: 10px; color: #333; flex-shrink: 0; }
+    .log-item .msg { color: #888; }
+    .log-empty { font-size: 13px; color: #2a2a2a; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Vision<span class="accent">Assist</span></div>
+  <div class="status-badge" id="statusBadge">
+    <div class="dot"></div>
+    <span id="statusText">Disconnected</span>
+  </div>
+</div>
+
+<div class="content">
+  <button class="btn btn-connect" id="mainBtn" onclick="toggleConnect()">
+    Connect to Camera
+  </button>
+
+  <div class="voice-info" id="voiceInfo">Loading voice…</div>
+
+  <div class="video-wrap" id="videoWrap">
+    <img id="videoImg" src="" alt="Live camera feed">
+  </div>
+
+  <div class="detection-card" id="detCard">
+    <div class="det-label empty" id="detLabel">Scanning…</div>
+    <div class="det-sub" id="detSub">Waiting for detections</div>
+  </div>
+
+  <div class="log-card" id="logCard">
+    <div class="log-title">Recent Announcements</div>
+    <div id="logList"><div class="log-empty">No announcements yet</div></div>
+  </div>
+</div>
+
+<script>
+  const synth = window.speechSynthesis;
+  let selectedVoice  = null;
+  let connected      = false;
+  let pollTimer      = null;
+  let lastSpokenKey  = '';   // tracks "label:zone" of last spoken announcement
+  let lastSpokenTime = 0;
+  const COOLDOWN_MS  = 4000;
+
+  // --- Voice selection: prefer high-quality iOS/English voices ---
+  const PREFERRED_VOICES = [
+    'Samantha',   // iOS en-US, best default
+    'Karen',      // iOS en-AU, neural quality
+    'Daniel',     // iOS en-GB
+    'Moira',      // iOS en-IE
+    'Tessa',      // iOS en-ZA
+    'Rishi',      // iOS en-IN
+  ];
+
+  function pickBestVoice() {
+    const voices = synth.getVoices();
+    if (!voices.length) return;
+
+    const enVoices = voices.filter(v => v.lang.startsWith('en'));
+
+    // 1. Prefer any Enhanced or Premium voice (iOS downloaded voices)
+    const premium = enVoices.find(v =>
+      v.name.toLowerCase().includes('enhanced') ||
+      v.name.toLowerCase().includes('premium')
+    );
+    if (premium) { selectedVoice = premium; }
+    else {
+      // 2. Try preferred list in order
+      let found = null;
+      for (const name of PREFERRED_VOICES) {
+        found = enVoices.find(v => v.name.includes(name));
+        if (found) break;
+      }
+      // 3. Fall back to any local en-US voice
+      selectedVoice = found
+        || enVoices.find(v => v.lang === 'en-US' && v.localService)
+        || enVoices[0]
+        || voices[0]
+        || null;
+    }
+
+    const info = document.getElementById('voiceInfo');
+    if (selectedVoice) {
+      info.textContent = '🎙 ' + selectedVoice.name;
+      info.className = 'voice-info loaded';
+    } else {
+      info.textContent = 'No voice found';
+    }
+  }
+
+  // Voices load async on iOS — listen for the event
+  if ('onvoiceschanged' in synth) {
+    synth.onvoiceschanged = pickBestVoice;
+  }
+  pickBestVoice();
+
+  // --- TTS ---
+  function speak(text) {
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    if (selectedVoice) u.voice = selectedVoice;
+    u.rate   = 0.92;
+    u.pitch  = 1.0;
+    u.volume = 1.0;
+    synth.speak(u);
+  }
+
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // Build the spoken phrase from the subject object.
+  // subject = { label, distance_ft, steps, zone }
+  function buildPhrase(subject) {
+    if (!subject) return null;
+    const stepWord = subject.steps === 1 ? 'step' : 'steps';
+    const ft = Math.round(subject.distance_ft);
+    if (subject.zone === 'warning') {
+      return `Stop! ${cap(subject.label)}, ${subject.steps} ${stepWord} ahead, ${ft} ft`;
+    }
+    return `${cap(subject.label)}, ${subject.steps} ${stepWord} ahead, ${ft} ft`;
+  }
+
+  function ts() {
+    return new Date().toLocaleTimeString([], {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+
+  function addLog(msg) {
+    const list = document.getElementById('logList');
+    list.querySelectorAll('.log-empty').forEach(e => e.remove());
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = '<span class="ts">' + ts() + '</span><span class="msg">' + msg + '</span>';
+    list.insertBefore(item, list.firstChild);
+    const items = list.querySelectorAll('.log-item');
+    if (items.length > 5) items[items.length - 1].remove();
+  }
+
+  async function poll() {
+    try {
+      const res  = await fetch('/detections');
+      const data = await res.json();
+      const subject = data.subject;  // {label, distance_ft, steps, zone} or null
+
+      const detLabel = document.getElementById('detLabel');
+      const detSub   = document.getElementById('detSub');
+      const detCard  = document.getElementById('detCard');
+
+      if (subject) {
+        const stepWord = subject.steps === 1 ? 'step' : 'steps';
+        detLabel.textContent = cap(subject.label);
+        // Colour the label by zone
+        detLabel.className = 'det-label zone-' + subject.zone;
+        detSub.textContent =
+          `${subject.distance_ft.toFixed(1)} ft  ·  ${subject.steps} ${stepWord}  ·  ${cap(subject.zone)}`;
+        detCard.classList.add('active');
+      } else {
+        detLabel.textContent = 'No objects';
+        detLabel.className   = 'det-label empty';
+        detSub.textContent   = 'Scanning…';
+        detCard.classList.remove('active');
+      }
+
+      const now        = Date.now();
+      // Re-announce when the subject label OR zone changes (e.g. person gets closer)
+      const currentKey = subject ? `${subject.label}:${subject.zone}` : '';
+      const changed    = currentKey !== lastSpokenKey;
+      const cooldownOk = (now - lastSpokenTime) >= COOLDOWN_MS;
+
+      if (changed && cooldownOk && subject) {
+        const phrase = buildPhrase(subject);
+        if (phrase) {
+          speak(phrase);
+          addLog(phrase);
+          lastSpokenTime = now;
+        }
+      }
+      if (changed && !subject && lastSpokenKey) {
+        addLog('—  Clear');
+      }
+
+      lastSpokenKey = currentKey;
+
+    } catch (err) {
+      console.warn('Poll error:', err);
+    }
+  }
+
+  function toggleConnect() { connected ? doDisconnect() : doConnect(); }
+
+  function doConnect() {
+    connected = true;
+
+    // Unlock iOS speech synthesis via user gesture
+    const unlock = new SpeechSynthesisUtterance(' ');
+    unlock.volume = 0;
+    if (selectedVoice) unlock.voice = selectedVoice;
+    synth.speak(unlock);
+
+    // Re-try voice pick in case voices loaded since page open
+    pickBestVoice();
+
+    document.getElementById('mainBtn').textContent  = 'Disconnect';
+    document.getElementById('mainBtn').className    = 'btn btn-disconnect';
+    document.getElementById('statusBadge').className = 'status-badge connected';
+    document.getElementById('statusText').textContent = 'Connected';
+    document.getElementById('videoWrap').className  = 'video-wrap show';
+    document.getElementById('videoImg').src         = '/video';
+    document.getElementById('detCard').className    = 'detection-card show';
+    document.getElementById('logCard').className    = 'log-card show';
+
+    lastSpokenKey  = '';
+    lastSpokenTime = 0;
+
+    poll();
+    pollTimer = setInterval(poll, 1500);
+  }
+
+  function doDisconnect() {
+    connected = false;
+    document.getElementById('videoImg').src = '';
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    synth.cancel();
+
+    document.getElementById('mainBtn').textContent   = 'Connect to Camera';
+    document.getElementById('mainBtn').className     = 'btn btn-connect';
+    document.getElementById('statusBadge').className = 'status-badge';
+    document.getElementById('statusText').textContent = 'Disconnected';
+    document.getElementById('videoWrap').className   = 'video-wrap';
+    document.getElementById('detCard').className     = 'detection-card';
+    document.getElementById('logCard').className     = 'log-card';
+  }
+</script>
+</body>
+</html>

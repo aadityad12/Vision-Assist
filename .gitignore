@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+env/
+
+# Model weights and voices — download separately, see README
+*.pt
+*.onnx
+*.onnx.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local session notes — not for publication
+PROGRESS.md
+PROJECT_LOG.md
+
+# Captures and scratch
+*.log
+captures/
+
+# Session handoff notes — not for publication
+HANDOFF.md

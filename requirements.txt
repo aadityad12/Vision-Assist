@@ -1,0 +1,15 @@
+# VisionAssist — Raspberry Pi software dependencies
+# Python 3.13, Raspberry Pi OS 64-bit (Bookworm or later)
+#
+# Install torch/torchvision FIRST and separately (CPU-only build):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#
+# Then:
+#   pip install -r requirements.txt
+
+picamera2
+ultralytics
+opencv-python-headless
+flask
+piper-tts
+pygame

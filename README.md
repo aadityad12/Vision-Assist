@@ -10,11 +10,15 @@
 
 VisionAssist is a head-mounted device that watches the path ahead, works out what is in the way and roughly how far off it is, then says so out loud through a pair of Bluetooth earbuds. No phone. No cloud. No internet connection. Everything runs on the device.
 
-It was built over roughly six weeks as an Infineon-sponsored capstone project at De Anza College, and demoed to the sponsors on completion.
+## Team
 
-```
-"stop, chair, 2 steps ahead"
-```
+Built at De Anza College as an Infineon-sponsored capstone project.
+
+**Aaditya Desai**: software lead. Vision pipeline, distance estimation, audio, web layer.
+
+**Oak** · **Michael** · **Cara** · **Ziyi**
+
+Project advisor: Professor Saied Rafati
 
 ## Contents
 
